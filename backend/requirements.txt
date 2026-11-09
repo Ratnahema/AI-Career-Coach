@@ -21,3 +21,4 @@ sentence-transformers
 pypdf
 python-docx
 docx2txt
+httpx
