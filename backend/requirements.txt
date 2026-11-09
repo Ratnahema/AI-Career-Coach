@@ -1,0 +1,23 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+
+# Database
+psycopg[binary]
+pgvector
+
+# RAG and LangChain
+langchain
+langchain-core
+langchain-groq
+langchain-huggingface
+langchain-text-splitters
+
+# Embeddings
+sentence-transformers
+
+# Document processing
+pypdf
+python-docx
+docx2txt

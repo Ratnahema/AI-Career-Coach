@@ -1,0 +1,142 @@
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f1f0ff, #eef5ff);
+  font-family: Arial, sans-serif;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 430px;
+  padding: 38px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 15px 45px rgba(30, 40, 90, 0.12);
+}
+
+.auth-logo {
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border-radius: 15px;
+  background: #eeeaff;
+  font-size: 27px;
+}
+
+.auth-card h1 {
+  text-align: center;
+  color: #25234a;
+  font-size: 27px;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+  margin-bottom: 25px;
+  background: #f2f2f8;
+  border-radius: 10px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: #666;
+  font-weight: 600;
+}
+
+.auth-tab.active {
+  background: white;
+  color: #6755d9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.auth-card form label {
+  display: block;
+  margin: 16px 0 8px;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.auth-card form input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 9px;
+  outline: none;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.auth-card form input:focus {
+  border-color: #7562e8;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px;
+  border: none;
+  border-radius: 9px;
+  background: #6755d9;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-error,
+.auth-success {
+  margin-top: 15px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.auth-error {
+  color: #d32f2f;
+}
+
+.auth-success {
+  color: #16834a;
+}
+
+.auth-switch {
+  margin-top: 25px;
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+}
+
+.auth-switch button {
+  border: none;
+  background: none;
+  color: #6755d9;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 5px;
+}
