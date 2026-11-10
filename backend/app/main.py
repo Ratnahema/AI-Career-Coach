@@ -685,10 +685,9 @@ def generate_career_report(
             temperature=0,
             api_key=groq_api_key,
             max_tokens=650,
-            model_kwargs={
-                "include_reasoning": False,
-                "reasoning_effort": "low"
-            }
+            include_reasoning=False,
+            reasoning_effort="low"
+            
         )
 
         # STEP 4: Extract facts from each resume section.
@@ -751,11 +750,10 @@ Return only the extracted facts.
             model="openai/gpt-oss-20b",
             temperature=0,
             api_key=groq_api_key,
-            max_tokens=3000,
-            model_kwargs={
-                "include_reasoning": False,
-                "reasoning_effort": "low"
-            }
+            max_tokens=3000,                
+            include_reasoning= False,
+            reasoning_effort= "low"
+            
         )
 
         # STEP 7: Generate the complete career report.
