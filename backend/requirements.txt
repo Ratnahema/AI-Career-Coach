@@ -14,8 +14,8 @@ langchain-core
 langchain-groq
 langchain-text-splitters
 
-# Hosted embeddings
-huggingface_hub
+# Local embeddings
+fastembed
 
 # Document processing
 pypdf

@@ -5,21 +5,28 @@ import psycopg
 from dotenv import load_dotenv
 from pgvector.psycopg import register_vector
 from pgvector import Vector
-from huggingface_hub import InferenceClient
+from fastembed import TextEmbedding
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from psycopg.types.json import Jsonb
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("SUPABASE_DB_URL")
-HF_TOKEN = os.getenv("HF_TOKEN")
 
-HF_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Load the embedding model locally instead of using paid Hugging Face API
+_embedding_model = None
 
-hf_client = (
-    InferenceClient(provider="hf-inference", token=HF_TOKEN)
-    if HF_TOKEN else None
-)
+
+def get_embedding_model():
+    global _embedding_model
+
+    if _embedding_model is None:
+        _embedding_model = TextEmbedding(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+    return _embedding_model
+
 
 # Split resume and job description into chunks
 text_splitter = RecursiveCharacterTextSplitter(
@@ -30,35 +37,22 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 
 def embed_texts(texts):
-    """Generate 384-dimensional embeddings using Hugging Face remotely."""
+    """Generate 384-dimensional embeddings locally using FastEmbed."""
 
-    if not HF_TOKEN or not hf_client:
-        raise ValueError("HF_TOKEN is missing from environment variables.")
+    if not texts:
+        return []
 
-    all_vectors = []
+    model = get_embedding_model()
 
-    # Send smaller batches to the hosted API
-    for start in range(0, len(texts), 16):
-        batch = texts[start:start + 16]
+    vectors = list(model.embed(texts))
 
-        result = hf_client.feature_extraction(
-            batch,
-            model=HF_MODEL
-        )
+    all_vectors = [vector.tolist() for vector in vectors]
 
-        vectors = result.tolist() if hasattr(result, "tolist") else result
-
-        # Handle a single returned vector
-        if vectors and isinstance(vectors[0], (int, float)):
-            vectors = [vectors]
-
-        for vector in vectors:
-            if len(vector) != 384:
-                raise ValueError(
-                    f"Expected 384 embedding dimensions, got {len(vector)}."
-                )
-
-            all_vectors.append(vector)
+    for vector in all_vectors:
+        if len(vector) != 384:
+            raise ValueError(
+                f"Expected 384 embedding dimensions, got {len(vector)}."
+            )
 
     if len(all_vectors) != len(texts):
         raise ValueError("Embedding count does not match input text count.")
