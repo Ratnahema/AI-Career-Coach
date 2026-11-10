@@ -5,17 +5,20 @@ import psycopg
 from dotenv import load_dotenv
 from pgvector.psycopg import register_vector
 from pgvector import Vector
-from langchain_huggingface import HuggingFaceEmbeddings
+from huggingface_hub import InferenceClient
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from psycopg.types.json import Jsonb
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("SUPABASE_DB_URL")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Hugging Face embedding model
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
+HF_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
+hf_client = (
+    InferenceClient(provider="hf-inference", token=HF_TOKEN)
+    if HF_TOKEN else None
 )
 
 # Split resume and job description into chunks
@@ -24,6 +27,43 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_overlap=150,
     separators=["\n\n", "\n", ".", " ", ""]
 )
+
+
+def embed_texts(texts):
+    """Generate 384-dimensional embeddings using Hugging Face remotely."""
+
+    if not HF_TOKEN or not hf_client:
+        raise ValueError("HF_TOKEN is missing from environment variables.")
+
+    all_vectors = []
+
+    # Send smaller batches to the hosted API
+    for start in range(0, len(texts), 16):
+        batch = texts[start:start + 16]
+
+        result = hf_client.feature_extraction(
+            batch,
+            model=HF_MODEL
+        )
+
+        vectors = result.tolist() if hasattr(result, "tolist") else result
+
+        # Handle a single returned vector
+        if vectors and isinstance(vectors[0], (int, float)):
+            vectors = [vectors]
+
+        for vector in vectors:
+            if len(vector) != 384:
+                raise ValueError(
+                    f"Expected 384 embedding dimensions, got {len(vector)}."
+                )
+
+            all_vectors.append(vector)
+
+    if len(all_vectors) != len(texts):
+        raise ValueError("Embedding count does not match input text count.")
+
+    return all_vectors
 
 
 def get_db_connection():
@@ -36,18 +76,10 @@ def get_db_connection():
     )
 
     register_vector(connection)
-
     return connection
 
 
 def store_documents(text, doc_type, user_id):
-    """
-    Store document chunks for one authenticated user.
-
-    Older documents of the same type are deleted only
-    for this user. Other users' documents are untouched.
-    """
-
     if not user_id:
         raise ValueError("Authenticated user ID is required.")
 
@@ -56,13 +88,11 @@ def store_documents(text, doc_type, user_id):
     if not chunks:
         raise ValueError("No text available to store.")
 
-    vectors = embeddings.embed_documents(chunks)
+    vectors = embed_texts(chunks)
 
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
 
-            # Delete only this user's older documents
-            # of the same document type.
             cursor.execute(
                 """
                 DELETE FROM career_documents
@@ -72,7 +102,6 @@ def store_documents(text, doc_type, user_id):
                 (user_id, doc_type)
             )
 
-            # Store chunks with their owner's user ID.
             for chunk, vector in zip(chunks, vectors):
                 cursor.execute(
                     """
@@ -92,19 +121,14 @@ def store_documents(text, doc_type, user_id):
 
 
 def retrieve_documents(query, user_id, doc_type=None, k=5):
-    """
-    Retrieve document chunks belonging only to one user.
-    """
-
     if not user_id:
         raise ValueError("Authenticated user ID is required.")
 
-    query_vector = embeddings.embed_query(query)
+    query_vector = embed_texts([query])[0]
 
     metadata_filter = (
         {"doc_type": doc_type}
-        if doc_type
-        else {}
+        if doc_type else {}
     )
 
     with get_db_connection() as connection:
